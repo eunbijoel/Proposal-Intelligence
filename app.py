@@ -46,9 +46,40 @@ if "rfp_chunks" not in st.session_state:
     st.session_state.rfp_chunks = []
 if "reference_chunks" not in st.session_state:
     st.session_state.reference_chunks = []
+if "uploader_version" not in st.session_state:
+    st.session_state.uploader_version = 0
 
 
-st.title("📄 Proposal Intelligence")
+def go_home() -> None:
+    """제목 클릭 시 홈으로: 분석 결과와 업로드 상태를 초기화합니다."""
+    st.session_state.rfp_result = None
+    st.session_state.role_candidates = None
+    st.session_state.selected_role = None
+    st.session_state.draft = None
+    st.session_state.rfp_chunks = []
+    st.session_state.reference_chunks = []
+    st.session_state.uploader_version += 1
+
+
+# 제목을 누르면 홈(초기 화면)으로 돌아갑니다.
+st.markdown(
+    """
+    <style>
+    a.home-title { text-decoration: none; color: inherit; }
+    a.home-title:hover { opacity: 0.75; }
+    a.home-title h1 { margin-bottom: 0.2rem; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+if st.query_params.get("home") == "1":
+    go_home()
+    st.query_params.clear()
+    st.rerun()
+st.markdown(
+    '<a class="home-title" href="?home=1" target="_self"><h1>📄 Proposal Intelligence</h1></a>',
+    unsafe_allow_html=True,
+)
 st.caption("공고문/RFP를 업로드하면 우리 센터가 담당할 수 있는 제안 내용의 초안을 만들어 드립니다.")
 
 
@@ -78,31 +109,30 @@ def parse_uploaded_files(uploaded_files) -> list[dict]:
 # =======================================================
 st.header("1️⃣ 자료 업로드")
 
-col1, col2 = st.columns(2)
+col1, col2 = st.columns([3, 1])
 
 with col1:
-    st.subheader("공고문 또는 RFP (필수)")
     rfp_files = st.file_uploader(
         "PDF 또는 DOCX 파일을 업로드하세요",
         type=["pdf", "docx"],
         accept_multiple_files=True,
-        key="rfp_uploader",
+        key=f"rfp_uploader_{st.session_state.uploader_version}",
     )
 
 with col2:
-    st.subheader("참고자료 (선택)")
-    st.caption("과거 유사 제안서, 우리 센터 기술자료, 기존 보고서/사업계획서, 제안서 양식 등")
+    st.caption("참고자료 (선택)")
     reference_files = st.file_uploader(
-        "PDF 또는 DOCX 파일을 업로드하세요",
+        "참고자료",
         type=["pdf", "docx"],
         accept_multiple_files=True,
-        key="reference_uploader",
+        key=f"reference_uploader_{st.session_state.uploader_version}",
+        label_visibility="collapsed",
     )
 
 if rfp_files:
-    st.success(f"공고문/RFP {len(rfp_files)}개 업로드됨: " + ", ".join(f.name for f in rfp_files))
+    st.success(f"업로드됨: " + ", ".join(f.name for f in rfp_files))
 if reference_files:
-    st.info(f"참고자료 {len(reference_files)}개 업로드됨: " + ", ".join(f.name for f in reference_files))
+    st.caption("참고자료: " + ", ".join(f.name for f in reference_files))
 
 st.divider()
 
