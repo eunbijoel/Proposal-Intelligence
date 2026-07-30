@@ -61,18 +61,34 @@ def analyze_rfp(rfp_chunks: list[dict]) -> dict:
 
 def _build_prompt(source_text: str) -> str:
     """RFP 분석용 프롬프트를 만듭니다."""
-    field_list = ", ".join(RFP_FIELDS)
-    return f"""당신은 공공 R&D 공고문을 분석하는 보조 도구입니다.
-아래 [RFP 원문]에서만 근거를 찾아 다음 항목을 JSON 형식으로만 답하세요.
-설명 문장이나 마크다운 코드블록 없이 JSON 객체 하나만 출력하세요.
+    return f"""당신은 공공 R&D/용역 공고문을 분석하는 보조 도구입니다.
+아래 [RFP 원문]에서만 근거를 찾아 JSON 객체 하나만 출력하세요.
+설명 문장이나 마크다운 코드블록은 넣지 마세요.
 
-항목: {field_list}
+각 항목의 의미(중요: 서로 섞지 마세요):
+- project_name: 사업명
+- purpose: 사업 목적
+- organization: 발주/전담기관
+- duration: 사업기간
+- budget: 예산 또는 지원 규모
+- mandatory_requirements: 필수 "과업/수행내용"만. 조사·분석·작성·산출물 등 실제로 해야 할 일.
+- tech_requirements: 기술/방법론/시스템 관련 요구사항
+- kpi: 정량적 성과지표
+- consortium_conditions: 공동수급/컨소시엄/하도급 등 참여 형태 조건
+- evaluation_criteria: 평가항목·배점·심사기준 (선정 절차 설명이 아님)
+- submission_documents: 제출해야 하는 서류 목록
+- notes: 접수방법, 보증금, 유의사항 등 기타
 
-규칙:
+절대 금지:
+- mandatory_requirements에 입찰 참가자격(중소기업확인서, 회원가입, 보증금, 법령 자격요건 등)을 넣지 마세요.
+- 입찰자격·행정요건은 notes 또는 submission_documents/consortium_conditions 중 해당 항목에만 넣으세요.
+- 과업/수행내용이 원문에 없으면 mandatory_requirements는 ["{NOT_FOUND}"] 로 두세요. 자격요건으로 채우지 마세요.
+- evaluation_criteria에 "우선협상대상자 선정" 같은 절차만 적지 말고, 실제 평가 기준이 없으면 ["{NOT_FOUND}"] 로 두세요.
+
+형식 규칙:
 - project_name, purpose, organization, duration, budget, consortium_conditions, notes 는 문자열입니다.
 - mandatory_requirements, tech_requirements, kpi, evaluation_criteria, submission_documents 는 문자열의 리스트입니다.
-- 원문에서 근거를 찾을 수 없는 항목은 절대로 추측하여 채우지 말고 정확히 "{NOT_FOUND}" 라는 문자열을 넣으세요.
-- 리스트 항목도 근거가 없으면 ["{NOT_FOUND}"] 로 채우세요.
+- 근거가 없는 항목은 추측하지 말고 "{NOT_FOUND}" (리스트는 ["{NOT_FOUND}"]) 로 채우세요.
 - 반드시 JSON 형식으로만 답하세요.
 
 [RFP 원문]
